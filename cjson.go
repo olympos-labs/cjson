@@ -230,7 +230,7 @@ func (c *canonicalizer) writeString(dst io.Writer, s string) (int64, error) {
 }
 
 func writeNumber(dst io.Writer, f float64) (int, error) {
-	if -(1<<53)+1 < f && f < (1<<53)-1 {
+	if 1-(1<<53) <= f && f <= (1<<53)-1 {
 		_, frac := math.Modf(f)
 		if frac == 0.0 {
 			return io.WriteString(dst, strconv.FormatInt(int64(f), 10))

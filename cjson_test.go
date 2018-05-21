@@ -6,7 +6,7 @@ import (
 )
 
 func TestNumberFormat(t *testing.T) {
-	expectNum := func(f float64, val string) {
+	expect := func(f float64, val string) {
 		var buf strings.Builder
 		_, err := writeNumber(&buf, f)
 		if err != nil {
@@ -18,28 +18,33 @@ func TestNumberFormat(t *testing.T) {
 		}
 	}
 
-	expectNum(-150, "-150")
-	expectNum(-150.1, "-1.501E2")
-	expectNum(-15, "-15")
-	expectNum(-15.1, "-1.51E1")
-	expectNum(-1.5, "-1.5E0")
-	expectNum(-1, "-1")
-	expectNum(-0.15, "-1.5E-1")
-	expectNum(0, "0")
-	expectNum(0.001, "1E-3")
-	expectNum(0.01, "1E-2")
-	expectNum(0.1, "1E-1")
-	expectNum(0.11, "1.1E-1")
-	expectNum(1, "1")
-	expectNum(1.5, "1.5E0")
-	expectNum(10, "10")
-	expectNum(10.5, "1.05E1")
-	expectNum(100, "100")
-	expectNum(100.5, "1.005E2")
-	expectNum(10000000000, "10000000000")
-	expectNum(10000000000.1, "1.00000000001E10")
-	expectNum(1000000000000000, "1000000000000000")
-	expectNum(10000000000000000, "1E16")
+	expect(-150, "-150")
+	expect(-150.1, "-1.501E2")
+	expect(-15, "-15")
+	expect(-15.1, "-1.51E1")
+	expect(-1.5, "-1.5E0")
+	expect(-1, "-1")
+	expect(-0.15, "-1.5E-1")
+	expect(-0.0, "0")
+	expect(0, "0")
+	expect(0.001, "1E-3")
+	expect(0.01, "1E-2")
+	expect(0.1, "1E-1")
+	expect(0.11, "1.1E-1")
+	expect(1, "1")
+	expect(1.5, "1.5E0")
+	expect(10, "10")
+	expect(10.5, "1.05E1")
+	expect(100, "100")
+	expect(100.5, "1.005E2")
+	expect(10000000000, "10000000000")
+	expect(10000000000.1, "1.00000000001E10")
+	expect(1000000000000000, "1000000000000000")
+	expect(10000000000000000, "1E16")
+	expect(1-(1<<53), "-9007199254740991")
+	expect(-(1 << 53), "-9.007199254740992E15")
+	expect((1<<53)-1, "9007199254740991")
+	expect((1 << 53), "9.007199254740992E15")
 }
 
 func TestOkCanonicalize(t *testing.T) {
@@ -65,4 +70,5 @@ func TestOkCanonicalize(t *testing.T) {
 	expect(`
 `, ``)
 	expect(`99.9 [1,2] 3 [] null {} false true {} false`, `9.99E1[1,2]3[]null{}false true{}false`)
+	expect(`-0.0 -0e0`, `0 0`)
 }
