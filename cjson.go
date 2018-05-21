@@ -1,10 +1,198 @@
 package cjson
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"math"
+	"sort"
 	"strconv"
 )
+
+// Canonicalize canonicalizes src and puts the result into dst.
+func Canonicalize(dst io.Writer, src io.Reader) (int64, error) {
+	c := &canonicalizer{
+		dec: json.NewDecoder(src),
+	}
+	var written int64
+	var err error
+	for {
+		var w int64
+		w, err = c.value(dst)
+		if err != nil {
+			break
+		}
+		written += w
+	}
+	if err == io.EOF {
+		err = nil
+	}
+	return written, err
+}
+
+type canonicalizer struct {
+	scratch bytes.Buffer
+	dec     *json.Decoder
+}
+
+func (c *canonicalizer) value(dst io.Writer) (int64, error) {
+	tok, err := c.dec.Token()
+	if err != nil {
+		return 0, err
+	}
+	switch tok := tok.(type) {
+	case string:
+		return c.writeString(dst, tok)
+	case float64:
+		w, err := writeNumber(dst, tok)
+		return int64(w), err
+	case json.Delim:
+		switch tok {
+		case '[':
+			return c.array(dst)
+		case '{':
+			return c.object(dst)
+		}
+	case bool:
+		var w int
+		if tok {
+			w, err = dst.Write([]byte("true"))
+		} else {
+			w, err = dst.Write([]byte("false"))
+		}
+		return int64(w), err
+	default:
+		if tok == nil {
+			w, err := dst.Write([]byte("null"))
+			return int64(w), err
+		}
+	}
+	panic(fmt.Sprintf("unknown/unexpected JSON token for value %v", tok))
+}
+
+func (c *canonicalizer) array(dst io.Writer) (int64, error) {
+	var written int64
+	w, err := dst.Write([]byte{'['})
+	written += int64(w)
+	if err != nil {
+		return written, err
+	}
+	first := true
+	for {
+		if !c.dec.More() {
+			_, err := c.dec.Token()
+			if err != nil {
+				return written, err
+			}
+			w, err := dst.Write([]byte{']'})
+			written += int64(w)
+			return written, err
+		}
+		if !first {
+			w, err = dst.Write([]byte{','})
+			written += int64(w)
+			if err != nil {
+				return written, err
+			}
+		}
+		first = false
+
+		w64, err := c.value(dst)
+		written += w64
+		if err != nil {
+			return written, err
+		}
+	}
+}
+
+func (c *canonicalizer) object(dst io.Writer) (int64, error) {
+	var values tuples
+	for {
+		if !c.dec.More() {
+			_, err := c.dec.Token()
+			if err != nil {
+				return 0, err
+			}
+			return c.writeObject(dst, values)
+		}
+		var key string
+		tok, err := c.dec.Token()
+		if err != nil {
+			return 0, err
+		}
+		switch tok := tok.(type) {
+		case string:
+			key = tok
+		default:
+			return 0, fmt.Errorf("Unexpected type %T (%v) reading JSON object, expected string key", tok, tok)
+		}
+		buf := new(bytes.Buffer)
+		_, err = c.value(buf)
+		if err != nil {
+			return 0, err
+		}
+		values = append(values, tuple{key: key, val: buf.Bytes()})
+	}
+}
+
+type tuple struct {
+	key string
+	val []byte
+}
+type tuples []tuple
+
+func (t tuples) Len() int           { return len(t) }
+func (t tuples) Less(i, j int) bool { return t[i].key < t[j].key }
+func (t tuples) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
+
+func (c *canonicalizer) writeObject(dst io.Writer, values tuples) (int64, error) {
+	var written int64
+	w, err := dst.Write([]byte{'{'})
+	written += int64(w)
+	if err != nil {
+		return written, err
+	}
+	sort.Sort(values)
+	first := true
+	for _, value := range values {
+		if !first {
+			w, err = dst.Write([]byte{','})
+			written += int64(w)
+			if err != nil {
+				return written, err
+			}
+		}
+		first = false
+		w64, err := c.writeString(dst, value.key)
+		written += w64
+		if err != nil {
+			return written, err
+		}
+		dst.Write([]byte{':'})
+		w, err = dst.Write(value.val)
+		written += int64(w)
+		if err != nil {
+			return written, err
+		}
+	}
+	w, err = dst.Write([]byte{'}'})
+	written += int64(w)
+	return written, err
+}
+
+func (c *canonicalizer) writeString(dst io.Writer, s string) (int64, error) {
+	c.scratch.Reset()
+	c.scratch.WriteByte('"')
+	for _, r := range s {
+		if r == '\\' || r == '"' {
+			c.scratch.WriteByte('\\')
+		}
+		c.scratch.WriteRune(r)
+	}
+	c.scratch.WriteByte('"')
+	return c.scratch.WriteTo(dst)
+}
 
 func writeNumber(dst io.Writer, f float64) (int, error) {
 	if -(1<<53)+1 < f && f < (1<<53)-1 {
