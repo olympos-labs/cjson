@@ -60,4 +60,9 @@ func TestOkCanonicalize(t *testing.T) {
 	expect(`[100.5, 1.5, 1.0, 1.0E0, 1.0e+0, 0.1e1]`, `[1.005E2,1.5E0,1,1,1,1]`)
 	expect(`{"ab": [1, 2],"aba":1}
 {"x":"y"}`, `{"ab":[1,2],"aba":1}{"x":"y"}`)
+	expect(`null null true false 1e1 1.5`, `null null true false 10 1.5E0`)
+	expect(``, ``)
+	expect(`
+`, ``)
+	expect(`99.9 [1,2] 3 [] null {} false true {} false`, `9.99E1[1,2]3[]null{}false true{}false`)
 }

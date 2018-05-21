@@ -82,3 +82,31 @@ elements = element
          | element, ",", elements
 array = "[", [ elements ], "]"
 ```
+
+## Value Stream
+
+A value stream is a sequence of JSON values not grouped by an array or object,
+but are still stored in the same sequence of bytes. In some cases, those
+elements must be separated by a significant whitespace.
+
+JSON values can be split into two categories: delimiter based and non-delimiter
+based. The delimiter based ones are the ones that start and end with delimiters:
+Strings, objects and arrays.
+
+If a non-delimiter based value is immediately followed by another non-delimiter
+based value, then a single space shall separate them:
+
+```
+needs-space = number | "true" | "false" | "null"
+delimiter-based = string | object | array
+
+element-stream = ε
+               | space-element-stream
+               | delimiter-based, element-stream
+
+space-element-stream = needs-space
+                     | needs-space, " ", space-element-stream
+                     | needs-space, delimiter-based, element-stream
+```
+
+(The symbol ε stands for the empty sequence)

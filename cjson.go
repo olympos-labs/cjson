@@ -32,8 +32,9 @@ func Canonicalize(dst io.Writer, src io.Reader) (int64, error) {
 }
 
 type canonicalizer struct {
-	scratch bytes.Buffer
-	dec     *json.Decoder
+	scratch    bytes.Buffer
+	dec        *json.Decoder
+	needsSpace bool
 }
 
 func (c *canonicalizer) value(dst io.Writer) (int64, error) {
@@ -43,29 +44,62 @@ func (c *canonicalizer) value(dst io.Writer) (int64, error) {
 	}
 	switch tok := tok.(type) {
 	case string:
+		c.needsSpace = false
 		return c.writeString(dst, tok)
 	case float64:
+		var written int64
+		if c.needsSpace {
+			w, err := dst.Write([]byte{' '})
+			written += int64(w)
+			if err != nil {
+				return written, err
+			}
+		}
 		w, err := writeNumber(dst, tok)
-		return int64(w), err
+		written += int64(w)
+		c.needsSpace = true
+		return written, err
 	case json.Delim:
 		switch tok {
 		case '[':
+			c.needsSpace = false
 			return c.array(dst)
 		case '{':
+			c.needsSpace = false
 			return c.object(dst)
 		}
 	case bool:
+		var written int64
+		if c.needsSpace {
+			w, err := dst.Write([]byte{' '})
+			written += int64(w)
+			if err != nil {
+				return written, err
+			}
+		}
 		var w int
 		if tok {
 			w, err = dst.Write([]byte("true"))
 		} else {
 			w, err = dst.Write([]byte("false"))
 		}
-		return int64(w), err
+		written += int64(w)
+		c.needsSpace = true
+		return written, err
 	default:
 		if tok == nil {
+			var written int64
+			if c.needsSpace {
+				w, err := dst.Write([]byte{' '})
+				written += int64(w)
+				if err != nil {
+					return written, err
+				}
+			}
+			c.needsSpace = true
 			w, err := dst.Write([]byte("null"))
-			return int64(w), err
+			written += int64(w)
+			return written, err
 		}
 	}
 	panic(fmt.Sprintf("unknown/unexpected JSON token for value %v", tok))
@@ -97,8 +131,8 @@ func (c *canonicalizer) array(dst io.Writer) (int64, error) {
 			}
 		}
 		first = false
-
 		w64, err := c.value(dst)
+		c.needsSpace = false
 		written += w64
 		if err != nil {
 			return written, err
@@ -129,6 +163,7 @@ func (c *canonicalizer) object(dst io.Writer) (int64, error) {
 		}
 		buf := new(bytes.Buffer)
 		_, err = c.value(buf)
+		c.needsSpace = false
 		if err != nil {
 			return 0, err
 		}
