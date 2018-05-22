@@ -72,3 +72,52 @@ func TestOkCanonicalize(t *testing.T) {
 	expect(`99.9 [1,2] 3 [] null {} false true {} false`, `9.99E1[1,2]3[]null{}false true{}false`)
 	expect(`-0.0 -0e0`, `0 0`)
 }
+
+func TestOkEncoderSpaced(t *testing.T) {
+	expect := func(expected string, vs ...interface{}) {
+		var buf strings.Builder
+		enc := NewEncoder(&buf)
+		for _, v := range vs {
+			err := enc.Encode(v)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+		}
+		if buf.String() != expected {
+			t.Errorf("%v became %v, not %v", vs, buf.String(), expected)
+		}
+	}
+
+	expect("null null", nil, nil)
+	expect("[1,2,3][4,5,6]", []int{1, 2, 3}, []int{4, 5, 6})
+	expect(`{"a":"b","c":"d","e":"f","g":"h"}`, map[string]string{"c": "d", "g": "h", "e": "f", "a": "b"})
+	expect(`0 0`, 0.0, 0.0)
+	expect(`1E-1 1.1E0`, 0.1, 1.1)
+}
+
+func TestOkEncoderNonSpaced(t *testing.T) {
+	expect := func(expected string, vs ...interface{}) {
+		var buf strings.Builder
+		enc := NewEncoder(&buf)
+		enc.SetStreamSpace(false)
+		for _, v := range vs {
+			err := enc.Encode(v)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+		}
+		if buf.String() != expected {
+			t.Errorf("%v became %v, not %v", vs, buf.String(), expected)
+		}
+	}
+
+	expect("nullnull", nil, nil)
+	expect("[1,2,3][4,5,6]", []int{1, 2, 3}, []int{4, 5, 6})
+	expect(`{"a":"b","c":"d","e":"f","g":"h"}`, map[string]string{"c": "d", "g": "h", "e": "f", "a": "b"})
+	expect(`00`, 0.0, 0.0)
+	expect(`1E-11.1E0`, 0.1, 1.1)
+}
+
+// TODO: Test Marshal just for

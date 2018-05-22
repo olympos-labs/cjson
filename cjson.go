@@ -10,7 +10,62 @@ import (
 	"strconv"
 )
 
-// Canonicalize canonicalizes src and puts the result into dst.
+// Marshal returns the canonical JSON encoding of v.
+//
+// See the documentation for encoding/json.Marshal for details about the
+// conversion of Go values to JSON.
+func Marshal(v interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	err := NewEncoder(&buf).Encode(v)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// An Encoder writes canonical JSON values to an output stream.
+type Encoder struct {
+	c        canonicalizer
+	dst      io.Writer
+	setSpace bool
+}
+
+// NewEncoder returns a new encoder that writes to w.
+func NewEncoder(w io.Writer) *Encoder {
+	return &Encoder{
+		dst:      w,
+		setSpace: true,
+	}
+}
+
+// Encode writes the JSON encoding of v to the stream. If multiple values are
+// encoded, they will be separated by a space if necessary if StreamSpace is
+// enabled (default on).
+//
+// See the documentation for encoding/json.Marshal for details about the
+// conversion of Go values to JSON.
+func (e *Encoder) Encode(v interface{}) error {
+	bs, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	// Wait what
+	e.c.dec = json.NewDecoder(bytes.NewBuffer(bs))
+	_, err = e.c.value(e.dst)
+	e.c.needsSpace = e.c.needsSpace && e.setSpace
+	return err
+}
+
+// SetStreamSpace turns spaces between values that must be separated on or off.
+//
+// You should typically not modify this unless you manually manage stream
+// separation.
+func (e *Encoder) SetStreamSpace(on bool) {
+	e.setSpace = on
+}
+
+// Canonicalize canonicalizes JSON values from src and puts the result into dst.
+// Multiple values from src will be separated by a space only if necessary.
 func Canonicalize(dst io.Writer, src io.Reader) (int64, error) {
 	c := &canonicalizer{
 		dec: json.NewDecoder(src),
