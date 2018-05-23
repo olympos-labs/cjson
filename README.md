@@ -5,7 +5,11 @@
 A Go library to emit JSON in normal/canonical form.
 
 This repository also contains the tool `json_canonicalize`, which canonicalizes
-JSON data.
+JSON data. You can fetch that one by running
+
+```shell
+$ go get olympos.io/encoding/cjson/cmd/json_canonicalize
+```
 
 ## Usage
 
