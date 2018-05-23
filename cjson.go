@@ -1,4 +1,17 @@
-package cjson
+// Copyright 2018 Jean Niklas L'orange. All rights reserved.
+// Use of this source code is governed by a BSD-3-Clause
+// license that can be found in the LICENSE file.
+
+// Package cjson canonicalizes JSON. This package implements the
+// canonicalization rules defined in
+// https://github.com/olympos-labs/cjson/blob/master/SPEC.md and provides
+// utility functions around converting both existing and new data to canonical
+// JSON.
+//
+// In addition, the package contains a small command line tool named
+// json_canonicalize. It can be installed by calling
+//     go get olympos.io/encoding/cjson/cmd/json_canonicalize
+package cjson // import "olympos.io/encoding/cjson"
 
 import (
 	"bytes"

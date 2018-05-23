@@ -12,6 +12,9 @@ element = string | number | object | array | "true" | "false" | "null"
 
 ## Strings
 
+Strings contain unicode characters as they are written, with an exception for
+`\` and `"`.
+
 ```
 string-element = unicode value except \ and "
                | "\\", "\\"
