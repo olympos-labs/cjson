@@ -120,4 +120,22 @@ func TestOkEncoderNonSpaced(t *testing.T) {
 	expect(`1E-11.1E0`, 0.1, 1.1)
 }
 
-// TODO: Test Marshal just for
+func TestOkMarshal(t *testing.T) {
+	expect := func(v interface{}, expected string) {
+		bs, err := Marshal(v)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if string(bs) != expected {
+			t.Errorf("%v became %v, not %v", v, string(bs), expected)
+		}
+	}
+
+	expect(nil, "null")
+	expect([]int{1, 2, 3}, "[1,2,3]")
+	expect(map[string]string{"c": "d", "g": "h", "e": "f", "a": "b"}, `{"a":"b","c":"d","e":"f","g":"h"}`)
+	expect(0.0, `0`)
+	expect(0.1, `1E-1`)
+	expect(1.1, `1.1E0`)
+}
