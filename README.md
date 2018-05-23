@@ -4,6 +4,13 @@
 
 A Go library to emit JSON in normal/canonical form.
 
+```go
+import "olympos.io/encoding/cjson"
+```
+
+To use this library, import the import path above with your favourite dependency
+management tool and refer to it in the files where you want to use it.
+
 This repository also contains the tool `json_canonicalize`, which canonicalizes
 JSON data. You can fetch that one by running
 
