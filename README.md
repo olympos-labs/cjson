@@ -23,7 +23,7 @@ $ go get olympos.io/encoding/cjson/cmd/json_canonicalize
 The core of this library is a single function:
 
 ```go
-func Canonicalize(dst io.Writer, src io.Reader) (int, error)
+func Canonicalize(dst io.Writer, src io.Reader) (int, error) {}
 ```
 
 `Canonicalize` takes a stream of JSON values, canonicalizes them, then sends
@@ -33,12 +33,12 @@ There are two functions that works on top of `Canonicalize` to ease the work it
 does:
 
 ```go
-func Marshal(v interface{}) ([]byte, error)
-func NewEncoder(w io.Writer) *Encoder
+func Marshal(v interface{}) ([]byte, error) {}
+func NewEncoder(w io.Writer) *Encoder {}
 ```
 
 Those two works almost as a drop-in replacement for the `encoding/json`
-functions of same name.
+functions with the same name.
 
 ## Rationale
 
@@ -58,8 +58,8 @@ However, this draft does not consider two things:
 2. Integer vs. double
 
 Strings can contain unicode characters that may or may not be written in up to
-three different ways. Consider, for example, newline. In JSON, a newline may be
-written as a newline, as `\n` or as `\u000d`.
+multiple different ways. Consider, for example, the symbol `/`. In JSON, `/` may
+be written as `/`, as `\/`, as `\u002F` and `\u002f`.
 
 The integer vs. double consideration has more with real world usage
 consideration: A number in JSON can be considered an integer if it is within the
