@@ -284,14 +284,33 @@ func (c *canonicalizer) writeObject(dst io.Writer, values tuples) (int64, error)
 	return written, err
 }
 
+var stringExceptions = []byte{
+	0, 0, 0, 0, 0, 0, 0, 0, 'b', 't', 'n', 0, 'f', 'r', 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+}
+
+const hex = "0123456789abcdef"
+
 func (c *canonicalizer) writeString(dst io.Writer, s string) (int64, error) {
 	c.scratch.Reset()
 	c.scratch.WriteByte('"')
 	for _, r := range s {
-		if r == '\\' || r == '"' {
-			c.scratch.WriteByte('\\')
+		if r < 0x20 {
+			exn := stringExceptions[r]
+			if exn != 0 {
+				c.scratch.WriteByte('\\')
+				c.scratch.WriteByte(exn)
+			} else {
+				c.scratch.Write([]byte(`\u00`))
+				c.scratch.WriteByte(hex[r>>4])
+				c.scratch.WriteByte(hex[r&0x0f])
+			}
+		} else {
+			if r == '\\' || r == '"' {
+				c.scratch.WriteByte('\\')
+			}
+			c.scratch.WriteRune(r)
 		}
-		c.scratch.WriteRune(r)
 	}
 	c.scratch.WriteByte('"')
 	return c.scratch.WriteTo(dst)

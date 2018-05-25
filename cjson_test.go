@@ -71,6 +71,10 @@ func TestOkCanonicalize(t *testing.T) {
 `, ``)
 	expect(`99.9 [1,2] 3 [] null {} false true {} false`, `9.99E1[1,2]3[]null{}false true{}false`)
 	expect(`-0.0 -0e0`, `0 0`)
+	expect(`"hello\nworld"`, `"hello\nworld"`)
+	expect(`"\u002F\u002f\//"`, `"////"`)
+	expect(`"\u000F"`, `"\u000f"`)
+	expect(`"\u000D"`, `"\r"`)
 }
 
 func TestOkEncoderSpaced(t *testing.T) {

@@ -13,12 +13,26 @@ element = string | number | object | array | "true" | "false" | "null"
 ## Strings
 
 Strings contain unicode characters as they are written, with an exception for
-`\` and `"`.
+`\` and `"` and the control characters U+0000 to U+001F.
+
+The control characters are written as follows:
+
+- As `\b` for U+0008, `\t` for U+0009, `\n` for U+000A, `\f` for U+000C, and
+  `\r` for U+000D
+- If not listed above, the character is written `\u00xx`, where `xx` is the hex
+  value of the control character in lowercase hex values
 
 ```
-string-element = unicode value except \ and "
+string-element = unicode value except \ and " above U+001F
+               | below-u0020
                | "\\", "\\"
                | "\\", "\""
+
+below-u0020 = "\\", ( "b" | "t" | "n" | "f" | "r" )
+            | "\\u00", ("0" | "1"), hex
+hex = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    | "a" | "b" | "c" | "d" | "e" | "f"
+
 string = "\"" { string-element } "\""
 ```
 
