@@ -1,8 +1,12 @@
 package cjson
 
 import (
+	"encoding/json"
+	"math/rand"
+	"reflect"
 	"strings"
 	"testing"
+	"testing/quick"
 )
 
 func TestNumberFormat(t *testing.T) {
@@ -142,4 +146,64 @@ func TestOkMarshal(t *testing.T) {
 	expect(0.0, `0`)
 	expect(0.1, `1E-1`)
 	expect(1.1, `1.1E0`)
+}
+
+func TestStringsAreEqual(t *testing.T) {
+	f := func(x string) bool {
+		bs, err := Marshal(x)
+		if err != nil {
+			return false
+		}
+		var v string
+		err = json.Unmarshal(bs, &v)
+		if err != nil {
+			return false
+		}
+		return v == x
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+type int54 int64
+
+func (i int54) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(int54(rand.Int63n((1<<54)-1) - (1 << 53) + 1))
+}
+
+func TestIntFloatsAreEqual(t *testing.T) {
+	f := func(x int54) bool {
+		bs, err := Marshal(float64(x))
+		if err != nil {
+			return false
+		}
+		var v int54
+		err = json.Unmarshal(bs, &v)
+		if err != nil {
+			return false
+		}
+		return v == x
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestFloatsAreEqual(t *testing.T) {
+	f := func(x float64) bool {
+		bs, err := Marshal(x)
+		if err != nil {
+			return false
+		}
+		var v float64
+		err = json.Unmarshal(bs, &v)
+		if err != nil {
+			return false
+		}
+		return v == x
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
 }
