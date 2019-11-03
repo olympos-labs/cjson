@@ -90,7 +90,7 @@ The encoding rules are described in detail in the [SPEC.md](SPEC.md).
 
 ## License
 
-Copyright © 2018 Jean Niklas L'orange
+Copyright © 2018-2019 Jean Niklas L'orange
 
 Distributed under the BSD 3-clause license, which is available in the file
 LICENSE.
