@@ -71,7 +71,7 @@ with a nonzero digit:
 trailing-nonzero = nonzero-digit
                  | digit, trailing-nonzero
 
-floating-point = nonzero-digit, [ ".", trailing-nonzero ], "E", integer
+floating-point = [ "-" ] nonzero-digit, [ ".", trailing-nonzero ], "E", integer
 ```
 
 Note that, although the EBNF definition of `floating-point` allows numbers such
